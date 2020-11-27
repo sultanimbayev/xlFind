@@ -13,13 +13,8 @@ namespace xlFind.FindText
 {
     public class FindTextHandler
     {
-#if DEBUG
-        const string LOG_FILENAME = "..\\..\\logs\\replaced_values ({date:HH_mm_ss dd.MM.yyyy}).txt";
-        const string SEARCHING_DIRECTORY = "..\\..";
-#else
-        const string LOG_FILENAME = "logs\\replaced_values ({date:HH_mm_ss dd.MM.yyyy}).txt";
+        const string LOG_FILENAME = "xlFindLogs\\replaced_values ({date:HH_mm_ss dd.MM.yyyy}).txt";
         const string WORKING_DIRECTORY = ".";
-#endif
         const string HELP_FILEPATH = ".\\Help\\Help.txt";
 
         public int Handle(FindTextOptions options)

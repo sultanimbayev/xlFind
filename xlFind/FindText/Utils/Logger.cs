@@ -7,33 +7,22 @@ using System.Threading.Tasks;
 
 namespace xlFind.Utils
 {
-    public class Logger : IDisposable
+    public class Logger
     {
         /// <summary>
         /// Настроики логирования
         /// </summary>
         public LoggerSettings Settings { get; private set; }
-
-        private FileStream _logFs;
-
+        
         /// <summary>
         /// Конструктор класса
         /// </summary>
         /// <param name="logFilename"></param>
         public Logger(string logFilename = null)
         {
-            Settings = new LoggerSettings(SetLogFilename);
+            Settings = new LoggerSettings();
             Settings.LogFilename = logFilename;
             if(logFilename == null) { Settings.WriteToFile = false; }
-        }
-
-        private void SetLogFilename(string newLogFilename)
-        {
-            _logFs?.Close();
-            if (newLogFilename != null)
-            {
-                _logFs = new FileStream(newLogFilename, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-            }
         }
         
         /// <summary>
@@ -44,22 +33,28 @@ namespace xlFind.Utils
         {
             if (Settings.WriteToFile)
             {
+                __createDirectoryIfNotExists(Settings.LogFilename);
+                var _logFs = new FileStream(Settings.LogFilename, FileMode.Append, FileAccess.Write);
                 var logData = Encoding.UTF8.GetBytes(msg + "\r\n");
                 _logFs.Write(logData, 0, logData.Length);
             }
             if (Settings.EchoConsole) { Console.WriteLine(msg); }
         }
 
-        public void Dispose()
+        private void __createDirectoryIfNotExists(string filepath)
         {
-            _logFs.Close();
+            if (!Directory.Exists(Path.GetDirectoryName(filepath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(filepath));
+            }
         }
+        
 
         public class LoggerSettings
         {
             private Action<string> _logFilenameChangedDeleg;
 
-            public LoggerSettings(Action<string> LogFilenameChangedDeleg)
+            public LoggerSettings(Action<string> LogFilenameChangedDeleg = null)
             {
                 _logFilenameChangedDeleg = LogFilenameChangedDeleg;
             }
