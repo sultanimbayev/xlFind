@@ -18,48 +18,75 @@ namespace xlFind.Utils
 
         public static IEnumerable<FileMatch> Find(string dir, string searchTxt, bool useRegex)
         {
-            var filepathsList = FilesFinder.FindFrom(dir).WithExtension("xlsx");
-
-            if (!useRegex) { searchTxt = Regex.Escape(searchTxt); }
-            Regex rgx = new Regex(searchTxt, RegexOptions.IgnoreCase);
-            var mathces = new List<FileMatch>();
-
-            foreach (var filepath in filepathsList)
-            {
-                var doc = SpreadsheetDocument.Open(filepath, false);
-                var matchFound = false;
-                var fileMatch = new FileMatch { Filepath = filepath };
-
-                foreach (var ws in GetWorksheets(doc))
-                {
-                    var cells = ws.FindCells(rgx);
-                    var worksheetMatch = new WorksheetMatch() { SheetName = ws.GetName() };
-                    if (cells != null && cells.Count() > 0)
-                    {
-                        if (!matchFound)
-                        {
-                            matchFound = true;
-                            mathces.Add(fileMatch);
-                        }
-
-                        fileMatch.WorksheetMatches.Add(worksheetMatch);
-
-                        foreach (var cell in cells)
-                        {
-                            var cellMatch = new CellMatch()
-                            {
-                                CellAddress = cell.CellReference?.Value,
-                                Value = cell.GetValue()
-                            };
-                            worksheetMatch.CellMatches.Add(cellMatch);
-                        }
-                    }
-                }
-                doc.Close();
-            }
-            return mathces;
+            return new MatchesFinder().FindMatches(dir, searchTxt, useRegex);
         }
 
+        public IEnumerable<FileMatch> FindMatches(string dir, string searchTxt, bool useRegex)
+        {
+            var filepathsList = FilesFinder.FindFrom(dir).WithExtension("xlsx");
+            if (!useRegex) { searchTxt = Regex.Escape(searchTxt); }
+            Regex rgx = new Regex(searchTxt, RegexOptions.IgnoreCase);
+            var result = new List<FileMatch>();
+            foreach (var filepath in filepathsList)
+            {
+                try
+                {
+                    var worksheetMatches = FindMatchesInFile(filepath, rgx).ToList();
+                    if(worksheetMatches.Count > 0)
+                    {
+                        result.Add(new FileMatch()
+                        {
+                            Filepath = filepath,
+                            WorksheetMatches = worksheetMatches
+                        });
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Ошибка чтения файла: {filepath}");
+                    Console.WriteLine(e.Message);
+#if DEBUG
+                    Console.WriteLine(e.StackTrace);
+#endif
+                }
+            }
+            return result;
+        }
+
+        public IEnumerable<WorksheetMatch> FindMatchesInFile(string filepath, Regex rgx)
+        {
+            var doc = SpreadsheetDocument.Open(filepath, false);
+            foreach (var ws in GetWorksheets(doc))
+            {
+                var worksheetMatch = GetMathcesInWorksheet(ws, rgx);
+                if(worksheetMatch != null)
+                {
+                    yield return worksheetMatch;
+                }
+            }
+            doc.Close();
+        }
+
+        public WorksheetMatch GetMathcesInWorksheet(Worksheet ws, Regex rgx)
+        {
+            var cells = ws.FindCells(rgx);
+            if (cells != null && cells.Count() > 0)
+            {
+                var worksheetMatch = new WorksheetMatch() { SheetName = ws.GetName() };
+                foreach (var cell in cells)
+                {
+                    var cellMatch = new CellMatch()
+                    {
+                        CellAddress = cell.CellReference?.Value,
+                        Value = cell.GetValue()
+                    };
+                    worksheetMatch.CellMatches.Add(cellMatch);
+                }
+                return worksheetMatch;
+            }
+            return null;
+        }
 
         public static IEnumerable<FileMatch> Replace(IEnumerable<FileMatch> fileMatches, string searchTxt, string replacement, bool useRegex)
         {
