@@ -44,7 +44,7 @@ namespace xlFind.Utils
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Ошибка чтения файла: {filepath}");
+                    Console.WriteLine($"Error on reading file: {filepath}");
                     Console.WriteLine(e.Message);
 #if DEBUG
                     Console.WriteLine(e.StackTrace);

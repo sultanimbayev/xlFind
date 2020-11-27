@@ -26,7 +26,7 @@ namespace xlFind.FindText
         {
             var dir = GetSearchingDirectory();
             var logFileName = GetLogFilename();
-            
+            Console.WriteLine($"looking for: \"{options.SearchText}\"");
             var matches = MatchesFinder.Find(dir, options.SearchText, options.UseRegex);
             var count = 0;
             if (string.IsNullOrEmpty(options.ReplaceText))
@@ -36,7 +36,7 @@ namespace xlFind.FindText
                 var result = JsonConvert.SerializeObject(matches, Formatting.Indented);
                 logger.Log(result);
                 count = matches.SelectMany(m => m.WorksheetMatches.SelectMany(wm => wm.CellMatches)).Count();
-                Console.WriteLine($"{count} совпадении!");
+                Console.WriteLine($"{count} matches!");
             }
             else
             {
@@ -48,11 +48,11 @@ namespace xlFind.FindText
                 var result = JsonConvert.SerializeObject(replaces, Formatting.Indented);
                 logger.Log(result);
                 count = replaces.SelectMany(m => m.WorksheetMatches.SelectMany(wm => wm.CellMatches)).Count();
-                Console.WriteLine($"{count} замен!");
+                Console.WriteLine($"{count} replaces!");
             }
 
-            if (count == 0) { Console.WriteLine("Что то ничего не нашлось :-\\ Попробуй ввести по-другому"); }
-            Console.WriteLine("Нажмите на любую кнопку чтобы выйти");
+            if (count == 0) { Console.WriteLine("Nothing found :-\\ try another word :))"); }
+            Console.WriteLine("Press any key to quit...");
             Console.ReadKey();
 
             return 0;
